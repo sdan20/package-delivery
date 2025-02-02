@@ -9,7 +9,7 @@ from truck import Truck
 # Truck one and two will handle all packages.
 if __name__ == '__main__':
     # Import data from the two CSV files and create trucks objects.
-    helper.import_packages()
+    helper.register_packages()
     helper.import_distances()
     truck_one = Truck('Truck One')
     truck_two = Truck('Truck Two')

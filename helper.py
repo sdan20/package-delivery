@@ -1,18 +1,44 @@
 import datetime
+import sympy
 
 from package import Package
 
-# Global variables
-total_packages = 40         # Total number of packages to be delivered
+# Global variables used throughout this file
+num_packages = 0            # Total number of packages to be delivered
 package_hash_table = []     # Hash table for storing all packages
 distance_table = []         # Table to store data from 'WGUPS Distance Table.csv'
 
 # Copy of package 9's bad address so that the incorrect address can be recalled. Data will be added later.
 package_9_bad_address = [(datetime.timedelta(hours=10, minutes=20))]
 
-# Avoid collisions when working with the hash table. Items are appended to indexes, rather than assigned.
-for i in range(total_packages):
-    package_hash_table.append([])
+
+# Reads, saves, and counts the rows of package data from the CSV file.
+# Returns the lines read and the index of the first row with package data.
+def count_packages():
+    global num_packages
+    with open('WGUPS Package File.csv', mode='r') as file:
+        # Read package data from file and retrieve them as a list of lines.
+        raw_data = file.readlines()
+
+    # Ignore lines without package data, which are simply for spacing and column labels.
+    index_first = 0
+    while raw_data[index_first][0] != '1':
+        index_first += 1
+    num_packages = len(raw_data) - index_first
+
+    return raw_data, index_first
+
+
+# Adds buckets to the hash table based on how many packages may be added.
+# A prime number at least 1.3 times the expected number of objects is used.
+def prepare_hash_table():
+    num_buckets = int(num_packages * 1.3)
+    while not sympy.isprime(num_buckets):
+        num_buckets += 1
+
+    # Avoid collisions when working with the hash table. Items are appended to indexes, rather than assigned.
+    for i in range(num_buckets):
+        package_hash_table.append([])
 
 
 # Determines where in the hash table a key and value will be placed.
@@ -21,28 +47,25 @@ def hash_key(key):
     return hash(key) % len(package_hash_table)
 
 
-# Imports data from 'WGUPS Package File.csv', creates package objects, and adds them to package_hash_table.
-def import_packages():
-    with open('WGUPS Package File.csv', mode='r') as file:
-        # Read package data from CSV file and retrieve them as a list of lines.
-        raw_data = file.readlines()
+# Initializes Package objects and adds them to a hash table for quick retrieval.
+def register_packages():
+    # Retrieve raw package data by unpacking the returned tuple
+    raw_data, index_first = count_packages()
+    prepare_hash_table()
 
-        # Ignore lines without package data, which are simply for spacing and column labels.
-        line = 0
-        while raw_data[line][0] != '1':
-            line += 1
+    # Iterate through all rows of package data and create package objects.
+    for row in range(index_first, len(raw_data)):
+        package_data = raw_data[row].split(',')
+        package = Package(package_data[0], package_data[1], package_data[2], package_data[4], package_data[5],
+                          package_data[6])
 
-        # Iterate through all lines of package data and create package objects.
-        for line_i in range(line, len(raw_data)):
-            line_data = raw_data[line_i].split(',')
-            package = Package(line_data[0], line_data[1], line_data[2], line_data[4], line_data[5], line_data[6])
-
-            # Add the key and package as a list in that index. Collisions are avoided, as items are appended to a list.
-            key = package.get_package_id()
-            package_hash_table[hash_key(key)].append([key, package])
+        # Add the key and package as a list in that index. Collisions are avoided, as items are appended to a list.
+        key = package.get_package_id()
+        package_hash_table[hash_key(key)].append([key, package])
 
 
-# Removes the zip code and extra space from the address where it is found in 'WGUPS Distance Table.csv'
+# Removes the zip code and extra space from the address where it is found in 'WGUPS Distance Table.csv'.
+# Most rows do not contain this data, so this provides for more consistent formatting.
 def remove_zip_code(address):
     index = address.index('(') - 1
     return address[0:index]
@@ -225,7 +248,7 @@ def print_status_all_packages(time):
     print('\nDisplaying data...')
     print('Package ID, Address, City, Zip Code, Delivery Deadline, Mass in Kilograms, Status, Delivery Time')
 
-    while package_id < total_packages:
+    while package_id < num_packages:
         package_id += 1
         package = get_package(str(package_id))
         delivery_time = package.get_delivery_time()

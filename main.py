@@ -1,23 +1,19 @@
-# Daniel Sorenson, Student ID: 000932225
 import datetime
-
 import helper
 from truck import Truck
 
 
-# Run all functions and methods for delivering all packages.
-# Truck one and two will handle all packages.
 if __name__ == '__main__':
-    # Import data from the two CSV files and create trucks objects.
+    # Import data from the two CSV files and create Truck objects.
+    helper.import_location_distance_data()
     helper.register_packages()
-    helper.import_distances()
     truck_one = Truck('Truck One')
     truck_two = Truck('Truck Two')
 
     # Load truck_two and deliver its first round of packages.
     helper.load_truck_two(truck_two)
     while len(truck_two.packages_held) > 0:
-        helper.travel_closest_stop(truck_two)
+        helper.travel_nearest_stop(truck_two)
     helper.travel_to_hub(truck_two)
 
     # Load truck_one and deliver its first round of packages.
@@ -25,20 +21,20 @@ if __name__ == '__main__':
     truck_one.set_time_on_clock(datetime.timedelta(hours=9, minutes=5))
     helper.load_truck_one(truck_one)
     while len(truck_one.packages_held) > 0:
-        helper.travel_closest_stop(truck_one)
+        helper.travel_nearest_stop(truck_one)
     helper.travel_to_hub(truck_one)
 
     # Load truck_two and deliver its next round of packages.
     helper.load_truck_two_again(truck_two)
     while len(truck_two.packages_held) > 0:
-        helper.travel_closest_stop(truck_two)
+        helper.travel_nearest_stop(truck_two)
     helper.travel_to_hub(truck_two)
 
     # Load truck_one and deliver the remaining packages.
     # Package 9, with an incorrect address, will be corrected and loaded, as it should be past 10:20 a.m. by this time.
     helper.load_truck_one_again(truck_one)
     while len(truck_one.packages_held) > 0:
-        helper.travel_closest_stop(truck_one)
+        helper.travel_nearest_stop(truck_one)
     helper.travel_to_hub(truck_one)
 
     # Run the user interface prompts.
